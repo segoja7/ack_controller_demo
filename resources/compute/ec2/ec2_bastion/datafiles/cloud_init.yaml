@@ -1,0 +1,64 @@
+#cloud-config
+package_update: true
+packages:
+  - unzip
+  - wget
+
+write_files:
+  - path: /tmp/install_bastion_userdata.sh
+    content: |
+      #!/bin/bash
+      #versiones
+      kubectl_version=1.28.3
+      awscli_version=2.13.32
+      helm_version=3.13.1
+      velero_version=1.12.1
+
+      cd /tmp
+      #Instalando AWS CLI
+      curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-$awscli_version.zip" -o "awscliv2.zip"
+      unzip awscliv2.zip
+      sudo ./aws/install
+
+      #Instalación de SSM
+      sudo dnf install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+      sudo systemctl enable amazon-ssm-agent
+      sudo systemctl start amazon-ssm-agent
+
+      #instalando kubectl
+      curl -LO https://dl.k8s.io/release/v$kubectl_version/bin/linux/amd64/kubectl
+      install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+      #Instalando Python
+      sudo dnf install python3 -y
+      sudo dnf install python3-pip -y
+
+      #Instalando jq
+      sudo dnf install jq -y
+
+      #Instalando helm
+      wget -O helm.tar.gz https://get.helm.sh/helm-v$helm_version-linux-amd64.tar.gz
+      tar -zxvf helm.tar.gz
+      sudo mv linux-amd64/helm /usr/local/bin/helm
+
+      #instalando velero
+      wget https://github.com/vmware-tanzu/velero/releases/download/v$velero_version/velero-v$velero_version-linux-amd64.tar.gz
+      tar -xvf velero-v$velero_version-linux-amd64.tar.gz
+      sudo mv velero-v$velero_version-linux-amd64/velero /usr/local/bin/velero
+
+      #instalando kubecolor
+      cd /tmp
+      curl -LO https://github.com/hidetatz/kubecolor/releases/download/v0.0.25/kubecolor_0.0.25_Linux_x86_64.tar.gz
+      tar -zxvf kubecolor_0.0.25_Linux_x86_64.tar.gz
+      chmod +x kubecolor
+      sudo mv kubecolor /usr/local/bin/kubecolor
+
+      # Agregar alias a /etc/profile para todos los usuarios
+      echo 'alias kubectl="/usr/local/bin/kubecolor"' | sudo tee -a /etc/profile
+      echo 'alias k="/usr/local/bin/kubecolor"' | sudo tee -a /etc/profile
+
+    permissions: '0755'
+
+runcmd:
+  - chmod +x /tmp/install_bastion_userdata.sh
+  - /tmp/install_bastion_userdata.sh
