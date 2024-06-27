@@ -11,7 +11,7 @@ locals {
       oidc_provider_arn = var.oidc_provider_arn
 
       helm_releases = {
-        crossplane_ec2 = {
+        ec2-controller = {
           name                = "ec2-controller"
           description         = "A Helm chart for ack ec2-controller"
           repository_username = data.aws_ecrpublic_authorization_token.token.user_name
